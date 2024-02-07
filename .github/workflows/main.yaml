@@ -53,28 +53,44 @@ jobs:
       #   run: |
       #     docker push your-docker-repo/musclex:${{ github.run_number }}
       #     docker push your-docker-repo/musclex:latest
-
   build-appimage:
     runs-on: ubuntu-latest
-    container: 
+    container:
       image: ubuntu:20.04
+
     steps:
       - uses: actions/checkout@v2
-      - name: Install dependencies and appimage-builder
+
+      - name: Install Dependencies
         run: |
           apt-get update
-          apt-get install -y python3.8 python3-pip wget
-          wget https://github.com/AppImageCrafters/appimage-builder/releases/download/v0.8.6/appimage-builder_0.8.6-1_amd64.deb
-          apt-get install -y ./appimage-builder_0.8.6-1_amd64.deb
-      - name: Prepare files and build AppImage (Dry Run)
+          apt-get install -y wget chmod
+
+      - name: Download appimage-builder AppImage
         run: |
-          # Add commands to copy necessary files, update AppImageBuilder.yml, and build AppImage
-          appimage-builder --skip-test
-      # - name: Upload AppImage (commented out for dry run)
-      #   uses: actions/upload-artifact@v2
-      #   with:
-      #     name: musclex-appimage
-      #     path: musclex/AppImageBuilder/*.AppImage
+          wget -O appimage-builder.AppImage https://github.com/AppImageCrafters/appimage-builder/releases/download/v1.1.0/appimage-builder-1.1.0-x86_64.AppImage
+          chmod +x appimage-builder.AppImage
+
+      - name: Prepare AppImageBuilder environment
+        run: |
+          mkdir -p musclex/AppImageBuilder
+          cp musclex/requirements.txt musclex/musclex musclex/musclex/main.py musclex/AppImageBuilder/
+
+      - name: Update AppImageBuilder.yml
+        run: |
+          # Update AppImageBuilder.yml as needed
+          # sed -i 's/version: 1.22.0/version: ${{ github.run_number }}/g' musclex/AppImageBuilder/AppImageBuilder.yml
+
+      - name: Build AppImage
+        run: |
+          cd musclex/AppImageBuilder
+          ./../appimage-builder.AppImage --skip-test
+
+      - name: Upload AppImage
+        uses: actions/upload-artifact@v2
+        with:
+          name: MuscleX-AppImage
+          path: musclex/AppImageBuilder/*.AppImage
 
   build-and-upload-linux-wheels:
     name: Build and Upload Wheels for Linux (Dry Run)
